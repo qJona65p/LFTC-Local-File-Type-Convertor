@@ -5,9 +5,9 @@ from PIL import Image
 import fitz
 
 def pdf_to_images(input_path: str, output_dir: str = None, fmt: str = "png", dpi: int = 300):
-    """Convert PDF pages to images (PNG, JPG, WebP, etc.)"""
+    """Convert PDF pages to images"""
     if output_dir is None:
-        output_dir = str(Path(input_path))[:-4] + f"_{fmt}_pages"
+        output_dir = Path(input_path).stem + f"_{fmt}_pages"
     
     Path(output_dir).mkdir(exist_ok=True)
     fmt = fmt.upper()
@@ -34,6 +34,7 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
     """Convert between image formats (PNG, JPG, WebP, TIFF, BMP, etc.)"""
     if not fmt:
         print("No format was given for image conversion.")
+        sys.exit(1)
     
     fmt = fmt.upper()
     if fmt == "JPG":
@@ -41,12 +42,12 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
 
     if not output_dir:
         # Auto-generate output name: image.png → image_converted.jpg
-        stem = input_path       
+        stem = Path(input_path).stem
         output_dir = f"{stem}_converted.{fmt.lower()}"
     
     try:
         with Image.open(input_path) as img:
-            # Handle RGBA → RGB for formats that don't support transparency (like JPG)
+            # Handle RGBA → RGB for formats that don't support transparency
             if fmt == "JPEG" and img.mode in ("RGBA", "LA", "P"):
                 img = img.convert("RGB")
             
@@ -61,14 +62,22 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
     except Exception as e:
         print(f"Error converting {input_path}: {e}")
 
-if __name__ == "__main__":
+def audio_to_audio():
+    print("Audio is WIP")
+    pass
+
+def main():
+    audio_fmts = ["mp3", "wav", "ogg", "flac", "m4a", "aac", "opus", "wma"]
+    image_fmts = ["png", "jpg", "jpeg", "webp", "tiff", "bmp"]
     parser = argparse.ArgumentParser(description="Local File Type Convertor - CLI edition")
     parser.add_argument("input", nargs="?", help="Input file (PDF, image or dir)")
     parser.add_argument("-o", "--output", help="Output file or directory")
-    parser.add_argument("-f", "--format", choices=["png", "jpg", "jpeg", "webp", "tiff", "bmp"], 
-                        help="Target format (default: png for PDFs, auto from extension for images)")
+    parser.add_argument("-f", "--format", 
+                        choices=audio_fmts+image_fmts,
+                        help="Target format")
     parser.add_argument("-d", "--dpi", type=int, default=300, help="DPI for PDF rendering (default: 300)")
     parser.add_argument("-q", "--quality", type=int, default=95, help="Quality for JPG/WebP (1-100)")
+    parser.add_argument("-b", "--bitrate", default="192k", help="Bitrate for audio (e.g. 128k, 320k)")
     parser.add_argument("--batch", action="store_true", help="Process all images in a directory")
 
     args = parser.parse_args()
@@ -82,11 +91,31 @@ if __name__ == "__main__":
     if input_path.suffix.lower() == ".pdf":
         # PDF conversion
         pdf_to_images(str(input_path), args.output, args.format or "png", args.dpi)
-    else:
-        # Regular image conversion
+        return
+    
+    # Image handling
+    if args.format in image_fmts or input_path.suffix.lower() in image_fmts:
         if args.batch and input_path.is_dir():
+            # Batch conversion
             for file in input_path.glob("*.*"):
-                if file.suffix.lower() in [".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".gif"]:
+                if file.suffix.lower()[1:] in image_fmts:
                     image_to_image(str(file), None, args.format, args.quality)
         else:
+            # Single conversion
             image_to_image(str(input_path), args.output, args.format, args.quality)
+        return
+
+    # Audio handling
+    if args.format in audio_fmts or input_path.suffix.lower() in audio_fmts:
+        if args.batch and input_path.is_dir():
+            # Batch conversion
+            for file in input_path.glob("*.*"):
+                if file.suffix.lower()[1:] in audio_fmts:
+                    audio_to_audio()
+        else:
+            # Single conversion
+            audio_to_audio()
+        return
+
+if __name__ == "__main__":
+    main()
