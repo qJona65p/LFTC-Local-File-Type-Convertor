@@ -15,15 +15,15 @@ def pdf_to_images(input_path: str, output_dir: str = None, fmt: str = "png", dpi
     doc = fitz.open(input_path)
     print(f"Converting {len(doc)} page(s) from PDF to {fmt} at {dpi} DPI...")
 
-    if ext == "JPG":
-        ext = "JPEG"
+    if fmt == "JPG":
+        fmt = "JPEG"
 
     for i, page in enumerate(doc):
         pix = page.get_pixmap(dpi=dpi)
         # Convert Pixmap to PIL Image for flexible saving
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         
-        output_file = Path(output_dir) / f"page_{i+1:04d}.{ext}"
+        output_file = Path(output_dir) / f"page_{i+1:04d}.{fmt.lower()}"
         img.save(output_file, format=fmt, quality=95 if fmt == "JPEG" else None)
         print(f"  Saved: {output_file.name}")
 
@@ -37,14 +37,13 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
     
     fmt = fmt.upper()
     if fmt == "JPG":
-            ext = "JPEG"
+        fmt = "JPEG"
 
-    ext = fmt.lower()
 
     if not output_dir:
         # Auto-generate output name: image.png → image_converted.jpg
         stem = input_path       
-        output_dir = f"{stem}_converted.{ext}"
+        output_dir = f"{stem}_converted.{fmt.lower()}"
     
     try:
         with Image.open(input_path) as img:
