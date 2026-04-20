@@ -33,12 +33,11 @@ def pdf_to_images(input_path: str, output_dir: str = None, fmt: str = "png", dpi
 def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, quality: int = 95):
     """Convert between image formats (PNG, JPG, WebP, TIFF, BMP, etc.)"""
     if not fmt:
-        fmt = Path(output_dir or input_path).suffix.lower().lstrip(".")
+        print("No format was given for image conversion.")
     
     fmt = fmt.upper()
     if fmt == "JPG":
         fmt = "JPEG"
-
 
     if not output_dir:
         # Auto-generate output name: image.png → image_converted.jpg
@@ -48,13 +47,13 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
     try:
         with Image.open(input_path) as img:
             # Handle RGBA → RGB for formats that don't support transparency (like JPG)
-            if ext == "jpeg" and img.mode in ("RGBA", "LA", "P"):
+            if fmt == "JPEG" and img.mode in ("RGBA", "LA", "P"):
                 img = img.convert("RGB")
             
             save_kwargs = {}
-            if ext == "jpeg":
+            if fmt == "JPEG":
                 save_kwargs["quality"] = quality
-            elif ext == "webp":
+            elif fmt == "WEBP":
                 save_kwargs["quality"] = quality
             
             img.save(output_dir, format=fmt, **save_kwargs)
@@ -64,7 +63,7 @@ def image_to_image(input_path: str, output_dir: str = None, fmt: str = None, qua
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Local File Type Convertor - CLI edition")
-    parser.add_argument("input", nargs="?", help="Input file (PDF or image)")
+    parser.add_argument("input", nargs="?", help="Input file (PDF, image or dir)")
     parser.add_argument("-o", "--output", help="Output file or directory")
     parser.add_argument("-f", "--format", choices=["png", "jpg", "jpeg", "webp", "tiff", "bmp"], 
                         help="Target format (default: png for PDFs, auto from extension for images)")
